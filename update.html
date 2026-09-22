@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Update Submission Status | Internal</title>
+<style>
+  :root {
+    --navy: #0f2740;
+    --blue: #1d4ed8;
+    --green: #16a34a;
+    --amber: #d97706;
+    --red: #dc2626;
+    --gray: #64748b;
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --border: #e2e8f0;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: #1e293b;
+    line-height: 1.5;
+  }
+  header {
+    background: var(--navy);
+    color: #fff;
+    padding: 24px 20px;
+  }
+  header .inner {
+    max-width: 900px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  header h1 { margin: 0; font-size: 1.4rem; }
+  header p { margin: 4px 0 0; color: #cbd5e1; font-size: 0.85rem; }
+  header a.nav-link {
+    color: #fff;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.25);
+    padding: 8px 14px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 0.85rem;
+  }
+  header a.nav-link:hover { background: rgba(255,255,255,0.2); }
+  main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  input[type="text"] {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    margin-bottom: 14px;
+  }
+  .results {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .result-row {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+  }
+  .result-row:last-child { border-bottom: none; }
+  .result-row:hover { background: #f8fafc; }
+  .result-row.selected { background: #eff6ff; }
+  .result-main { font-size: 0.92rem; }
+  .result-main .name { font-weight: 600; }
+  .result-main .sub { color: var(--gray); font-size: 0.82rem; margin-top: 2px; }
+  .badge {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .badge.default { background: #e2e8f0; color: #334155; }
+  .badge.info { background: #dbeafe; color: #1d4ed8; }
+  .badge.hold { background: #fef3c7; color: #b45309; }
+  .badge.stop { background: #fee2e2; color: #b91c1c; }
+  .badge.good { background: #dcfce7; color: #15803d; }
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .panel h2 { margin: 0 0 4px; font-size: 1.1rem; }
+  .panel .sub { color: var(--gray); font-size: 0.85rem; margin-bottom: 16px; }
+  .field { margin-bottom: 6px; font-size: 0.88rem; }
+  .field strong { color: #334155; }
+  .message-box {
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.85rem;
+    color: #475569;
+    white-space: pre-wrap;
+    margin: 10px 0 16px;
+  }
+  select {
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.9rem;
+    background: #fff;
+    margin-right: 10px;
+  }
+  button.save {
+    padding: 9px 18px;
+    border-radius: 6px;
+    border: none;
+    background: var(--blue);
+    color: #fff;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+  button.save:hover { background: #1e40af; }
+  button.save:disabled { background: #94a3b8; cursor: not-allowed; }
+  .save-status {
+    margin-top: 10px;
+    font-size: 0.85rem;
+  }
+  .save-status.ok { color: var(--green); }
+  .save-status.error { color: var(--red); }
+  .state {
+    text-align: center;
+    padding: 20px;
+    color: var(--gray);
+    font-size: 0.9rem;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="inner">
+    <div>
+      <h1>Update Submission Status</h1>
+      <p>Search a driver, then set their current status</p>
+    </div>
+    <a class="nav-link" href="index.html">&larr; View full feed</a>
+  </div>
+</header>
+
+<main>
+  <input type="text" id="searchInput" placeholder="Search by name or phone number...">
+  <div id="stateMsg" class="state">Loading submissions&hellip;</div>
+  <div class="results" id="results" style="display:none;"></div>
+
+  <div class="panel" id="panel" style="display:none;">
+    <h2 id="panelName"></h2>
+    <div class="sub" id="panelSub"></div>
+    <div class="field"><strong>Phone:</strong> <span id="panelPhone"></span></div>
+    <div class="field"><strong>Carrier:</strong> <span id="panelCarrier"></span></div>
+    <div class="field"><strong>Recruiter:</strong> <span id="panelRecruiter"></span></div>
+    <div class="message-box" id="panelMessage"></div>
+    <div>
+      <select id="statusSelect"></select>
+      <button class="save" id="saveBtn">Save Status</button>
+    </div>
+    <div class="save-status" id="saveStatus"></div>
+  </div>
+</main>
+
+<script>
+  var API_URL = 'https://script.google.com/macros/s/AKfycbyaL8o7Pdz145fKpb1pJJwOk6Rt1KrW9aMOzMw2tcW06sEMeZ4_Y-Ung0_RrkOSWkWnTg/exec';
+
+  var STATUS_CLASS = {
+    'Submitted': 'default',
+    'Contact & Review': 'info',
+    'Paperwork & Processing': 'info',
+    'Drug Test': 'info',
+    'Scheduled & Confirmed': 'info',
+    'Show & Hired': 'good',
+    'Waiting for RC': 'hold',
+    'Hiring on Hold': 'hold',
+    'Need Attention': 'hold',
+    'Need to Reschedule': 'hold',
+    'No Show': 'stop',
+    "DQ'd": 'stop',
+    'Not Interested / Ditched Us': 'stop',
+    'Hired': 'good'
+  };
+
+  var allSubmissions = [];
+  var statusOptions = [];
+  var selectedThreadId = null;
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function badgeHtml(status) {
+    var cls = STATUS_CLASS[status] || 'default';
+    return '<span class="badge ' + cls + '">' + escapeHtml(status || 'Unknown') + '</span>';
+  }
+
+  function formatDate(iso) {
+    if (!iso) return '';
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return escapeHtml(iso);
+    return d.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+  }
+
+  function renderResults() {
+    var q = document.getElementById('searchInput').value.trim().toLowerCase();
+    var results = document.getElementById('results');
+    if (!q) {
+      results.style.display = 'none';
+      results.innerHTML = '';
+      return;
+    }
+    var matches = allSubmissions.filter(function (s) {
+      var hay = [s.name, s.phone].join(' ').toLowerCase();
+      return hay.indexOf(q) >= 0;
+    }).slice(0, 30);
+
+    if (!matches.length) {
+      results.style.display = 'block';
+      results.innerHTML = '<div class="result-row"><span class="result-main">No matches</span></div>';
+      return;
+    }
+
+    results.style.display = 'block';
+    results.innerHTML = matches.map(function (s) {
+      return '<div class="result-row" data-id="' + escapeHtml(s.threadId) + '">' +
+        '<div class="result-main">' +
+          '<div class="name">' + escapeHtml(s.name || '(no name)') + '</div>' +
+          '<div class="sub">' + escapeHtml(s.phone) + ' &middot; ' + escapeHtml(s.carrier) + ' &middot; ' + formatDate(s.date) + '</div>' +
+        '</div>' +
+        badgeHtml(s.status) +
+        '</div>';
+    }).join('');
+
+    Array.prototype.forEach.call(results.querySelectorAll('.result-row[data-id]'), function (row) {
+      row.addEventListener('click', function () {
+        selectSubmission(row.getAttribute('data-id'));
+      });
+    });
+  }
+
+  function selectSubmission(threadId) {
+    selectedThreadId = threadId;
+    var s = allSubmissions.filter(function (x) { return x.threadId === threadId; })[0];
+    if (!s) return;
+
+    Array.prototype.forEach.call(document.querySelectorAll('.result-row'), function (row) {
+      row.classList.toggle('selected', row.getAttribute('data-id') === threadId);
+    });
+
+    document.getElementById('panel').style.display = 'block';
+    document.getElementById('panelName').textContent = s.name || '(no name)';
+    document.getElementById('panelSub').textContent = formatDate(s.date) + ' — currently ' + (s.status || 'Unknown');
+    document.getElementById('panelPhone').textContent = s.phone || '—';
+    document.getElementById('panelCarrier').textContent = s.carrier || '—';
+    document.getElementById('panelRecruiter').textContent = s.recruiter || '—';
+    document.getElementById('panelMessage').textContent = s.message || '(no message)';
+    document.getElementById('statusSelect').value = s.status;
+    document.getElementById('saveStatus').textContent = '';
+    document.getElementById('panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function loadStatusOptions(options) {
+    statusOptions = options;
+    var sel = document.getElementById('statusSelect');
+    sel.innerHTML = options.map(function (o) { return '<option value="' + escapeHtml(o) + '">' + escapeHtml(o) + '</option>'; }).join('');
+  }
+
+  function saveStatus() {
+    if (!selectedThreadId) return;
+    var status = document.getElementById('statusSelect').value;
+    var btn = document.getElementById('saveBtn');
+    var saveStatusEl = document.getElementById('saveStatus');
+    btn.disabled = true;
+    saveStatusEl.className = 'save-status';
+    saveStatusEl.textContent = 'Saving…';
+
+    var url = API_URL + '?action=updateStatus&threadId=' + encodeURIComponent(selectedThreadId) + '&status=' + encodeURIComponent(status);
+    fetch(url)
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data.ok) throw new Error(data.error || 'Unknown error');
+        var s = allSubmissions.filter(function (x) { return x.threadId === selectedThreadId; })[0];
+        if (s) s.status = status;
+        saveStatusEl.className = 'save-status ok';
+        saveStatusEl.textContent = 'Saved.';
+        document.getElementById('panelSub').textContent = formatDate(s.date) + ' — currently ' + status;
+        renderResults();
+      })
+      .catch(function (err) {
+        saveStatusEl.className = 'save-status error';
+        saveStatusEl.textContent = 'Failed to save: ' + err.message;
+      })
+      .finally(function () {
+        btn.disabled = false;
+      });
+  }
+
+  function setState(msg) {
+    var el = document.getElementById('stateMsg');
+    if (msg) {
+      el.style.display = 'block';
+      el.textContent = msg;
+    } else {
+      el.style.display = 'none';
+    }
+  }
+
+  function load() {
+    setState('Loading submissions…');
+    fetch(API_URL + '?action=list')
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data.ok) throw new Error(data.error || 'Unknown error');
+        allSubmissions = data.submissions || [];
+        loadStatusOptions(data.statusOptions || []);
+        setState(null);
+        renderResults();
+      })
+      .catch(function (err) {
+        setState('Failed to load submissions: ' + err.message);
+      });
+  }
+
+  document.getElementById('searchInput').addEventListener('input', renderResults);
+  document.getElementById('saveBtn').addEventListener('click', saveStatus);
+
+  load();
+</script>
+
+</body>
+</html>

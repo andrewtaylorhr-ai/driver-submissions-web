@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Driver Submissions Feed | Internal</title>
+<style>
+  :root {
+    --navy: #0f2740;
+    --blue: #1d4ed8;
+    --green: #16a34a;
+    --amber: #d97706;
+    --red: #dc2626;
+    --gray: #64748b;
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --border: #e2e8f0;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: #1e293b;
+    line-height: 1.5;
+  }
+  header {
+    background: var(--navy);
+    color: #fff;
+    padding: 24px 20px;
+  }
+  header .inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  header h1 {
+    margin: 0;
+    font-size: 1.4rem;
+  }
+  header p {
+    margin: 4px 0 0;
+    color: #cbd5e1;
+    font-size: 0.85rem;
+  }
+  header a.nav-link {
+    color: #fff;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.25);
+    padding: 8px 14px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 0.85rem;
+  }
+  header a.nav-link:hover { background: rgba(255,255,255,0.2); }
+  main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  .toolbar {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .toolbar input[type="text"] {
+    flex: 1;
+    min-width: 200px;
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.9rem;
+  }
+  .toolbar select {
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.9rem;
+    background: #fff;
+  }
+  .toolbar button {
+    padding: 9px 16px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: #fff;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+  .toolbar button:hover { background: #f1f5f9; }
+  .meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    font-size: 0.85rem;
+    color: var(--gray);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  thead th {
+    text-align: left;
+    background: #f1f5f9;
+    padding: 10px 12px;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--gray);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  tbody td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.87rem;
+    vertical-align: top;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: #f8fafc; }
+  td.message {
+    max-width: 280px;
+    color: #475569;
+    white-space: pre-wrap;
+  }
+  td.nowrap { white-space: nowrap; }
+  .badge {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .badge.default { background: #e2e8f0; color: #334155; }
+  .badge.info { background: #dbeafe; color: #1d4ed8; }
+  .badge.hold { background: #fef3c7; color: #b45309; }
+  .badge.stop { background: #fee2e2; color: #b91c1c; }
+  .badge.good { background: #dcfce7; color: #15803d; }
+  .state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--gray);
+  }
+  .state.error { color: var(--red); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="inner">
+    <div>
+      <h1>Driver Submissions Feed</h1>
+      <p>Internal — live view of every submission pulled from email</p>
+    </div>
+    <a class="nav-link" href="update.html">Update a status &rarr;</a>
+  </div>
+</header>
+
+<main>
+  <div class="toolbar">
+    <input type="text" id="searchInput" placeholder="Search name, phone, carrier, recruiter, email...">
+    <select id="statusFilter">
+      <option value="">All statuses</option>
+    </select>
+    <button id="refreshBtn">Refresh</button>
+  </div>
+  <div class="meta-row">
+    <span id="countLabel"></span>
+    <span id="lastUpdated"></span>
+  </div>
+  <div id="content">
+    <div class="state" id="stateMsg">Loading submissions&hellip;</div>
+    <table id="table" style="display:none;">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Name</th>
+          <th>Phone</th>
+          <th>Carrier</th>
+          <th>Recruiter</th>
+          <th>Status</th>
+          <th>Message</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+</main>
+
+<script>
+  var API_URL = 'https://script.google.com/macros/s/AKfycbyaL8o7Pdz145fKpb1pJJwOk6Rt1KrW9aMOzMw2tcW06sEMeZ4_Y-Ung0_RrkOSWkWnTg/exec';
+
+  var STATUS_CLASS = {
+    'Submitted': 'default',
+    'Contact & Review': 'info',
+    'Paperwork & Processing': 'info',
+    'Drug Test': 'info',
+    'Scheduled & Confirmed': 'info',
+    'Show & Hired': 'good',
+    'Waiting for RC': 'hold',
+    'Hiring on Hold': 'hold',
+    'Need Attention': 'hold',
+    'Need to Reschedule': 'hold',
+    'No Show': 'stop',
+    "DQ'd": 'stop',
+    'Not Interested / Ditched Us': 'stop',
+    'Hired': 'good'
+  };
+
+  var allSubmissions = [];
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function badgeHtml(status) {
+    var cls = STATUS_CLASS[status] || 'default';
+    return '<span class="badge ' + cls + '">' + escapeHtml(status || 'Unknown') + '</span>';
+  }
+
+  function formatDate(iso) {
+    if (!iso) return '';
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return escapeHtml(iso);
+    return d.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+  }
+
+  function render() {
+    var q = document.getElementById('searchInput').value.trim().toLowerCase();
+    var statusFilter = document.getElementById('statusFilter').value;
+    var rows = allSubmissions.filter(function (s) {
+      if (statusFilter && s.status !== statusFilter) return false;
+      if (!q) return true;
+      var hay = [s.name, s.phone, s.email, s.carrier, s.recruiter].join(' ').toLowerCase();
+      return hay.indexOf(q) >= 0;
+    });
+
+    var tbody = document.getElementById('tbody');
+    tbody.innerHTML = rows.map(function (s) {
+      return '<tr>' +
+        '<td class="nowrap">' + formatDate(s.date) + '</td>' +
+        '<td class="nowrap">' + escapeHtml(s.name) + '</td>' +
+        '<td class="nowrap">' + escapeHtml(s.phone) + '</td>' +
+        '<td class="nowrap">' + escapeHtml(s.carrier) + '</td>' +
+        '<td class="nowrap">' + escapeHtml(s.recruiter) + '</td>' +
+        '<td class="nowrap">' + badgeHtml(s.status) + '</td>' +
+        '<td class="message">' + escapeHtml(s.message) + '</td>' +
+        '</tr>';
+    }).join('');
+
+    document.getElementById('countLabel').textContent =
+      rows.length + ' of ' + allSubmissions.length + ' submissions shown';
+  }
+
+  function loadStatusOptions(options) {
+    var sel = document.getElementById('statusFilter');
+    sel.innerHTML = '<option value="">All statuses</option>' +
+      options.map(function (o) { return '<option value="' + escapeHtml(o) + '">' + escapeHtml(o) + '</option>'; }).join('');
+  }
+
+  function setState(msg, isError) {
+    var el = document.getElementById('stateMsg');
+    var table = document.getElementById('table');
+    if (msg) {
+      el.style.display = 'block';
+      el.className = 'state' + (isError ? ' error' : '');
+      el.textContent = msg;
+      table.style.display = 'none';
+    } else {
+      el.style.display = 'none';
+      table.style.display = 'table';
+    }
+  }
+
+  function load() {
+    setState('Loading submissions…', false);
+    fetch(API_URL + '?action=list')
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data.ok) throw new Error(data.error || 'Unknown error');
+        allSubmissions = data.submissions || [];
+        loadStatusOptions(data.statusOptions || []);
+        setState(null, false);
+        render();
+        document.getElementById('lastUpdated').textContent = 'Updated ' + new Date().toLocaleTimeString();
+      })
+      .catch(function (err) {
+        setState('Failed to load submissions: ' + err.message, true);
+      });
+  }
+
+  document.getElementById('searchInput').addEventListener('input', render);
+  document.getElementById('statusFilter').addEventListener('change', render);
+  document.getElementById('refreshBtn').addEventListener('click', load);
+
+  load();
+</script>
+
+</body>
+</html>

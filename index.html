@@ -3,231 +3,195 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Driver Submissions Feed | Internal</title>
+<title>Driver Submissions | Internal</title>
 <style>
-  :root {
-    --navy: #0f2740;
-    --blue: #1d4ed8;
-    --green: #16a34a;
-    --amber: #d97706;
-    --red: #dc2626;
-    --gray: #64748b;
-    --bg: #f8fafc;
-    --card: #ffffff;
-    --border: #e2e8f0;
+  :root{
+    --ap-blue:#0071e3; --ap-blue-press:#0058b9; --ap-blue-tint:rgba(0,113,227,.10);
+    --ap-canvas:#f5f5f7; --ap-card:#ffffff;
+    --ap-ink:#1d1d1f; --ap-ink2:#6e6e73; --ap-ink3:#86868b;
+    --ap-sep:#e3e3e6; --ap-sep2:#f0f0f2;
+    --ap-radius:16px; --ap-radius-sm:9px;
+    --ap-shadow:0 1px 2px rgba(0,0,0,.04), 0 4px 16px rgba(0,0,0,.05);
   }
   * { box-sizing: border-box; }
-  body {
+  html, body {
     margin: 0;
+    background: var(--ap-canvas);
+    color: var(--ap-ink);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background: var(--bg);
-    color: #1e293b;
-    line-height: 1.5;
+    font-size: 14px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.003em;
   }
-  header {
-    background: var(--navy);
-    color: #fff;
-    padding: 24px 20px;
+  .wrap { padding: 24px 24px 96px; max-width: 1400px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0 0 4px; font-weight: 600; letter-spacing: -0.02em; }
+  .sub { color: var(--ap-ink2); font-size: 13px; margin-bottom: 18px; }
+
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 18px; }
+  .kpi {
+    background: var(--ap-card); border: 1px solid var(--ap-sep); border-radius: var(--ap-radius);
+    box-shadow: var(--ap-shadow); padding: 12px 14px;
   }
-  header .inner {
-    max-width: 1200px;
-    margin: 0 auto;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 12px;
+  .kpi .label { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--ap-ink2); font-weight: 600; }
+  .kpi .value { font-size: 26px; font-weight: 700; margin-top: 2px; }
+
+  .filters {
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    background: var(--ap-card); border: 1px solid var(--ap-sep); border-radius: var(--ap-radius);
+    box-shadow: var(--ap-shadow); padding: 10px 12px; margin-bottom: 14px;
   }
-  header h1 {
-    margin: 0;
-    font-size: 1.4rem;
+  .filters input[type="text"] {
+    flex: 1; min-width: 200px; padding: 8px 12px;
+    border: 1px solid #d2d2d7; border-radius: var(--ap-radius-sm);
+    background: #fff; color: var(--ap-ink); font-size: 13px;
   }
-  header p {
-    margin: 4px 0 0;
-    color: #cbd5e1;
-    font-size: 0.85rem;
+  .filters select {
+    padding: 8px 12px; border: 1px solid #d2d2d7; border-radius: var(--ap-radius-sm);
+    background: #fff; color: var(--ap-ink); font-size: 13px;
   }
-  header a.nav-link {
-    color: #fff;
-    background: rgba(255,255,255,0.12);
-    border: 1px solid rgba(255,255,255,0.25);
-    padding: 8px 14px;
-    border-radius: 6px;
-    text-decoration: none;
-    font-size: 0.85rem;
+  .filters input[type="text"]:focus, .filters select:focus {
+    outline: none; border-color: var(--ap-blue); box-shadow: 0 0 0 3px rgba(0,113,227,.22);
   }
-  header a.nav-link:hover { background: rgba(255,255,255,0.2); }
-  main {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
+  .filters button {
+    padding: 8px 16px; border: 1px solid #d2d2d7; border-radius: var(--ap-radius-sm);
+    background: #fff; color: var(--ap-ink); font-weight: 500; font-size: 13px; cursor: pointer;
   }
-  .toolbar {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    align-items: center;
-    margin-bottom: 16px;
-  }
-  .toolbar input[type="text"] {
-    flex: 1;
-    min-width: 200px;
-    padding: 9px 12px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    font-size: 0.9rem;
-  }
-  .toolbar select {
-    padding: 9px 12px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    font-size: 0.9rem;
-    background: #fff;
-  }
-  .toolbar button {
-    padding: 9px 16px;
-    border-radius: 6px;
-    border: 1px solid var(--border);
-    background: #fff;
-    cursor: pointer;
-    font-size: 0.9rem;
-  }
-  .toolbar button:hover { background: #f1f5f9; }
+  .filters button:hover { background: #f5f5f7; }
+
   .meta-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-    font-size: 0.85rem;
-    color: var(--gray);
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 10px; font-size: 12px; color: var(--ap-ink2);
   }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    overflow: hidden;
+
+  .card { background: var(--ap-card); border: 1px solid var(--ap-sep); border-radius: var(--ap-radius); box-shadow: var(--ap-shadow); overflow: hidden; }
+
+  .driver-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .driver-table th {
+    position: sticky; top: 0; background: #fbfbfd; text-align: left; font-weight: 600;
+    color: var(--ap-ink2); border-bottom: 1px solid var(--ap-sep); padding: 10px 12px;
+    font-size: 11px; text-transform: uppercase; letter-spacing: .04em;
   }
-  thead th {
-    text-align: left;
-    background: #f1f5f9;
-    padding: 10px 12px;
-    font-size: 0.78rem;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    color: var(--gray);
-    border-bottom: 1px solid var(--border);
-    white-space: nowrap;
+  .driver-table td { padding: 10px 12px; border-bottom: 1px solid var(--ap-sep2); vertical-align: top; }
+  .driver-table tr:last-child td { border-bottom: none; }
+  .driver-table tr:hover td { background: #f5f5f7; }
+  .driver-table .name { font-weight: 600; }
+  .driver-table .muted { color: var(--ap-ink2); font-size: 12px; }
+
+  details.email-detail summary { cursor: pointer; color: var(--ap-blue); font-size: 12px; list-style: none; }
+  details.email-detail summary::-webkit-details-marker { display: none; }
+  details.email-detail .body {
+    white-space: pre-wrap; background: #fafafb; border: 1px solid var(--ap-sep2);
+    border-radius: 6px; padding: 8px; font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11px; margin-top: 6px; max-width: 320px;
   }
-  tbody td {
-    padding: 10px 12px;
-    border-bottom: 1px solid var(--border);
-    font-size: 0.87rem;
-    vertical-align: top;
+
+  .stage-select {
+    font-size: 12px; padding: 5px 7px; border-radius: var(--ap-radius-sm);
+    border: 1px solid #d2d2d7; background: #fff; color: var(--ap-ink); width: 100%; max-width: 170px;
   }
-  tbody tr:last-child td { border-bottom: none; }
-  tbody tr:hover { background: #f8fafc; }
-  td.message {
-    max-width: 280px;
-    color: #475569;
-    white-space: pre-wrap;
-  }
-  td.nowrap { white-space: nowrap; }
-  .badge {
-    display: inline-block;
-    padding: 3px 9px;
-    border-radius: 999px;
-    font-size: 0.76rem;
-    font-weight: 600;
-    white-space: nowrap;
-  }
-  .badge.default { background: #e2e8f0; color: #334155; }
-  .badge.info { background: #dbeafe; color: #1d4ed8; }
-  .badge.hold { background: #fef3c7; color: #b45309; }
-  .badge.stop { background: #fee2e2; color: #b91c1c; }
-  .badge.good { background: #dcfce7; color: #15803d; }
-  .state {
-    text-align: center;
-    padding: 40px 20px;
-    color: var(--gray);
-  }
-  .state.error { color: var(--red); }
+  .stage-select:focus { outline: none; border-color: var(--ap-blue); box-shadow: 0 0 0 3px rgba(0,113,227,.22); }
+  .stage-select:disabled { opacity: .6; }
+
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; margin-top: 6px; }
+  .pill-submitted{ background:rgba(0,113,227,.12);  color:#0058b9; }
+  .pill-review   { background:rgba(88,86,214,.14);  color:#4340b0; }
+  .pill-docs     { background:rgba(255,159,10,.18); color:#a85d00; }
+  .pill-drug     { background:rgba(48,176,199,.16); color:#0a7c8c; }
+  .pill-scheduled{ background:rgba(88,86,214,.14);  color:#4340b0; }
+  .pill-show     { background:rgba(52,199,89,.18);  color:#1d8a3d; }
+  .pill-waitrc   { background:rgba(255,45,85,.12);  color:#c01548; }
+  .pill-hold     { background:rgba(255,204,0,.22);  color:#8a6d00; }
+  .pill-attention{ background:rgba(255,149,0,.16);  color:#b25e00; }
+  .pill-resched  { background:rgba(255,149,0,.16);  color:#b25e00; }
+  .pill-noshow   { background:rgba(255,59,48,.14);  color:#d70015; }
+  .pill-dqed     { background:rgba(255,59,48,.15);  color:#c11200; }
+  .pill-ditched  { background:#ececed;              color:#424245; }
+  .pill-hired    { background:rgba(52,199,89,.24);  color:#157a33; }
+
+  .save-note { font-size: 11px; margin-top: 4px; }
+  .save-note.ok { color: #1d8a3d; }
+  .save-note.error { color: #d70015; }
+
+  .state { text-align: center; padding: 40px 20px; color: var(--ap-ink2); }
+  .state.error { color: #d70015; }
 </style>
 </head>
 <body>
 
-<header>
-  <div class="inner">
-    <div>
-      <h1>Driver Submissions Feed</h1>
-      <p>Internal — live view of every submission pulled from email</p>
-    </div>
-    <a class="nav-link" href="update.html">Update a status &rarr;</a>
-  </div>
-</header>
+<div class="wrap">
+  <h1>Driver Submissions</h1>
+  <div class="sub">Live feed from email — update a driver's status directly in the table below.</div>
 
-<main>
-  <div class="toolbar">
+  <div class="kpis" id="kpis">
+    <div class="kpi"><div class="label">Total submissions</div><div class="value" id="kpi-total">–</div></div>
+    <div class="kpi"><div class="label">Needs attention</div><div class="value" id="kpi-attention">–</div></div>
+    <div class="kpi"><div class="label">Scheduled / confirmed</div><div class="value" id="kpi-scheduled">–</div></div>
+    <div class="kpi"><div class="label">Hired</div><div class="value" id="kpi-hired">–</div></div>
+  </div>
+
+  <div class="filters">
     <input type="text" id="searchInput" placeholder="Search name, phone, carrier, recruiter, email...">
-    <select id="statusFilter">
-      <option value="">All statuses</option>
-    </select>
+    <select id="statusFilter"><option value="">All statuses</option></select>
     <button id="refreshBtn">Refresh</button>
   </div>
   <div class="meta-row">
     <span id="countLabel"></span>
     <span id="lastUpdated"></span>
   </div>
+
   <div id="content">
     <div class="state" id="stateMsg">Loading submissions&hellip;</div>
-    <table id="table" style="display:none;">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Name</th>
-          <th>Phone</th>
-          <th>Carrier</th>
-          <th>Recruiter</th>
-          <th>Status</th>
-          <th>Message</th>
-        </tr>
-      </thead>
-      <tbody id="tbody"></tbody>
-    </table>
+    <div class="card" style="display:none;" id="tableCard">
+      <table class="driver-table" id="table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Carrier</th>
+            <th>Recruiter</th>
+            <th>Message</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
   </div>
-</main>
+</div>
 
 <script>
   var API_URL = 'https://script.google.com/macros/s/AKfycbyaL8o7Pdz145fKpb1pJJwOk6Rt1KrW9aMOzMw2tcW06sEMeZ4_Y-Ung0_RrkOSWkWnTg/exec';
 
-  var STATUS_CLASS = {
-    'Submitted': 'default',
-    'Contact & Review': 'info',
-    'Paperwork & Processing': 'info',
-    'Drug Test': 'info',
-    'Scheduled & Confirmed': 'info',
-    'Show & Hired': 'good',
-    'Waiting for RC': 'hold',
-    'Hiring on Hold': 'hold',
-    'Need Attention': 'hold',
-    'Need to Reschedule': 'hold',
-    'No Show': 'stop',
-    "DQ'd": 'stop',
-    'Not Interested / Ditched Us': 'stop',
-    'Hired': 'good'
+  var STATUS_PILL_CLASS = {
+    'Submitted': 'pill-submitted',
+    'Contact & Review': 'pill-review',
+    'Paperwork & Processing': 'pill-docs',
+    'Drug Test': 'pill-drug',
+    'Scheduled & Confirmed': 'pill-scheduled',
+    'Show & Hired': 'pill-show',
+    'Waiting for RC': 'pill-waitrc',
+    'Hiring on Hold': 'pill-hold',
+    'Need Attention': 'pill-attention',
+    'Need to Reschedule': 'pill-resched',
+    'No Show': 'pill-noshow',
+    "DQ'd": 'pill-dqed',
+    'Not Interested / Ditched Us': 'pill-ditched',
+    'Hired': 'pill-hired'
   };
 
   var allSubmissions = [];
+  var statusOptions = [];
 
   function escapeHtml(s) {
     return String(s == null ? '' : s)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
-  function badgeHtml(status) {
-    var cls = STATUS_CLASS[status] || 'default';
-    return '<span class="badge ' + cls + '">' + escapeHtml(status || 'Unknown') + '</span>';
+  function pillHtml(status) {
+    var cls = STATUS_PILL_CLASS[status] || 'pill-submitted';
+    return '<span class="pill ' + cls + '">' + escapeHtml(status || 'Unknown') + '</span>';
   }
 
   function formatDate(iso) {
@@ -235,6 +199,26 @@
     var d = new Date(iso);
     if (isNaN(d.getTime())) return escapeHtml(iso);
     return d.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+  }
+
+  function statusOptionsHtml(current) {
+    return statusOptions.map(function (o) {
+      return '<option value="' + escapeHtml(o) + '"' + (o === current ? ' selected' : '') + '>' + escapeHtml(o) + '</option>';
+    }).join('');
+  }
+
+  function renderKpis() {
+    var total = allSubmissions.length;
+    var attention = 0, scheduled = 0, hired = 0;
+    allSubmissions.forEach(function (s) {
+      if (s.status === 'Need Attention' || s.status === 'Waiting for RC' || s.status === 'Need to Reschedule') attention++;
+      if (s.status === 'Scheduled & Confirmed' || s.status === 'Drug Test') scheduled++;
+      if (s.status === 'Hired' || s.status === 'Show & Hired') hired++;
+    });
+    document.getElementById('kpi-total').textContent = total;
+    document.getElementById('kpi-attention').textContent = attention;
+    document.getElementById('kpi-scheduled').textContent = scheduled;
+    document.getElementById('kpi-hired').textContent = hired;
   }
 
   function render() {
@@ -249,22 +233,73 @@
 
     var tbody = document.getElementById('tbody');
     tbody.innerHTML = rows.map(function (s) {
-      return '<tr>' +
-        '<td class="nowrap">' + formatDate(s.date) + '</td>' +
-        '<td class="nowrap">' + escapeHtml(s.name) + '</td>' +
-        '<td class="nowrap">' + escapeHtml(s.phone) + '</td>' +
-        '<td class="nowrap">' + escapeHtml(s.carrier) + '</td>' +
-        '<td class="nowrap">' + escapeHtml(s.recruiter) + '</td>' +
-        '<td class="nowrap">' + badgeHtml(s.status) + '</td>' +
-        '<td class="message">' + escapeHtml(s.message) + '</td>' +
+      var msgHtml = s.message
+        ? '<details class="email-detail"><summary>View message</summary><div class="body">' + escapeHtml(s.message) + '</div></details>'
+        : '<span class="muted">—</span>';
+      return '<tr data-tid="' + escapeHtml(s.threadId) + '">' +
+        '<td class="muted">' + formatDate(s.date) + '</td>' +
+        '<td class="name">' + escapeHtml(s.name || '(no name)') + '</td>' +
+        '<td>' + escapeHtml(s.phone) + '</td>' +
+        '<td>' + escapeHtml(s.carrier) + '</td>' +
+        '<td>' + escapeHtml(s.recruiter) + '</td>' +
+        '<td>' + msgHtml + '</td>' +
+        '<td>' +
+          '<select class="stage-select" data-tid="' + escapeHtml(s.threadId) + '">' + statusOptionsHtml(s.status) + '</select>' +
+          '<div class="pill-wrap">' + pillHtml(s.status) + '</div>' +
+          '<div class="save-note" data-note></div>' +
+        '</td>' +
         '</tr>';
     }).join('');
 
     document.getElementById('countLabel').textContent =
       rows.length + ' of ' + allSubmissions.length + ' submissions shown';
+
+    Array.prototype.forEach.call(tbody.querySelectorAll('select.stage-select'), function (sel) {
+      sel.addEventListener('change', onStatusChange);
+    });
+
+    renderKpis();
+  }
+
+  function onStatusChange(e) {
+    var sel = e.target;
+    var tid = sel.getAttribute('data-tid');
+    var newStatus = sel.value;
+    var s = allSubmissions.filter(function (x) { return x.threadId === tid; })[0];
+    if (!s) return;
+    var prevStatus = s.status;
+    var row = sel.closest('tr');
+    var pillWrap = row.querySelector('.pill-wrap');
+    var note = row.querySelector('[data-note]');
+
+    sel.disabled = true;
+    note.className = 'save-note';
+    note.textContent = 'Saving…';
+
+    var url = API_URL + '?action=updateStatus&threadId=' + encodeURIComponent(tid) + '&status=' + encodeURIComponent(newStatus);
+    fetch(url)
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data.ok) throw new Error(data.error || 'Unknown error');
+        s.status = newStatus;
+        pillWrap.innerHTML = pillHtml(newStatus);
+        note.className = 'save-note ok';
+        note.textContent = 'Saved.';
+        renderKpis();
+        setTimeout(function () { if (note.textContent === 'Saved.') note.textContent = ''; }, 3000);
+      })
+      .catch(function (err) {
+        sel.value = prevStatus;
+        note.className = 'save-note error';
+        note.textContent = 'Failed: ' + err.message;
+      })
+      .finally(function () {
+        sel.disabled = false;
+      });
   }
 
   function loadStatusOptions(options) {
+    statusOptions = options;
     var sel = document.getElementById('statusFilter');
     sel.innerHTML = '<option value="">All statuses</option>' +
       options.map(function (o) { return '<option value="' + escapeHtml(o) + '">' + escapeHtml(o) + '</option>'; }).join('');
@@ -272,15 +307,15 @@
 
   function setState(msg, isError) {
     var el = document.getElementById('stateMsg');
-    var table = document.getElementById('table');
+    var card = document.getElementById('tableCard');
     if (msg) {
       el.style.display = 'block';
       el.className = 'state' + (isError ? ' error' : '');
       el.textContent = msg;
-      table.style.display = 'none';
+      card.style.display = 'none';
     } else {
       el.style.display = 'none';
-      table.style.display = 'table';
+      card.style.display = 'block';
     }
   }
 

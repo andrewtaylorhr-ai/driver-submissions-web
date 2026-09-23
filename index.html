@@ -35,6 +35,33 @@
   }
   .kpi .label { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--ap-ink2); font-weight: 600; }
   .kpi .value { font-size: 26px; font-weight: 700; margin-top: 2px; }
+  .kpi.alert .value { color: #c93400; }
+  .kpi.success .value { color: #1d8a3d; }
+
+  .period-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .period-tabs button {
+    font-size: 13px; padding: 7px 14px; border-radius: var(--ap-radius-sm);
+    border: 1px solid var(--ap-sep); background: var(--ap-card); color: var(--ap-ink);
+    cursor: pointer; font-weight: 500;
+  }
+  .period-tabs button:hover { background: #f5f5f7; }
+  .period-tabs button.active { background: var(--ap-ink); color: #fff; border-color: var(--ap-ink); }
+
+  .period-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin-bottom: 18px; }
+  .period-card {
+    background: var(--ap-card); border: 1px solid var(--ap-sep); border-radius: var(--ap-radius);
+    box-shadow: var(--ap-shadow); padding: 14px 16px;
+  }
+  .period-card .ph { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+  .period-card .ph .t { font-size: 13px; font-weight: 700; color: var(--ap-ink); }
+  .period-card .ph .r { font-size: 11px; color: var(--ap-ink3); }
+  .period-card .big { font-size: 28px; font-weight: 700; }
+  .period-card .delta { font-size: 12px; margin-top: 2px; }
+  .period-card .delta.up { color: #1d8a3d; }
+  .period-card .delta.down { color: #d70015; }
+  .period-card .delta.flat { color: var(--ap-ink2); }
+  .period-card .micro { display: flex; gap: 12px; margin-top: 8px; font-size: 11px; color: var(--ap-ink2); }
+  .period-card .micro span strong { color: var(--ap-ink); font-size: 13px; display: block; }
 
   .filters {
     display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
@@ -123,11 +150,53 @@
   <h1>Driver Submissions</h1>
   <div class="sub">Live feed from email — update a driver's status directly in the table below.</div>
 
+  <div class="period-tabs" id="period-tabs">
+    <button data-period="today">Today</button>
+    <button data-period="yesterday">Yesterday</button>
+    <button data-period="week">This week</button>
+    <button data-period="month">This month</button>
+    <button data-period="all" class="active">All in window</button>
+  </div>
+
+  <div class="period-cards">
+    <div class="period-card">
+      <div class="ph"><span class="t">Today</span><span class="r" id="pc-today-range">–</span></div>
+      <div class="big" id="pc-today-count">–</div>
+      <div class="delta" id="pc-today-delta">–</div>
+      <div class="micro">
+        <span><strong id="pc-today-hired">–</strong>hired</span>
+        <span><strong id="pc-today-active">–</strong>in pipeline</span>
+        <span><strong id="pc-today-recruiters">–</strong>recruiters</span>
+      </div>
+    </div>
+    <div class="period-card">
+      <div class="ph"><span class="t">This week</span><span class="r" id="pc-week-range">–</span></div>
+      <div class="big" id="pc-week-count">–</div>
+      <div class="delta" id="pc-week-delta">–</div>
+      <div class="micro">
+        <span><strong id="pc-week-hired">–</strong>hired</span>
+        <span><strong id="pc-week-active">–</strong>in pipeline</span>
+        <span><strong id="pc-week-recruiters">–</strong>recruiters</span>
+      </div>
+    </div>
+    <div class="period-card">
+      <div class="ph"><span class="t">This month</span><span class="r" id="pc-month-range">–</span></div>
+      <div class="big" id="pc-month-count">–</div>
+      <div class="delta" id="pc-month-delta">–</div>
+      <div class="micro">
+        <span><strong id="pc-month-hired">–</strong>hired</span>
+        <span><strong id="pc-month-active">–</strong>in pipeline</span>
+        <span><strong id="pc-month-recruiters">–</strong>recruiters</span>
+      </div>
+    </div>
+  </div>
+
   <div class="kpis" id="kpis">
     <div class="kpi"><div class="label">Total submissions</div><div class="value" id="kpi-total">–</div></div>
-    <div class="kpi"><div class="label">Needs attention</div><div class="value" id="kpi-attention">–</div></div>
-    <div class="kpi"><div class="label">Scheduled / confirmed</div><div class="value" id="kpi-scheduled">–</div></div>
-    <div class="kpi"><div class="label">Hired</div><div class="value" id="kpi-hired">–</div></div>
+    <div class="kpi"><div class="label">In pipeline</div><div class="value" id="kpi-pipeline">–</div></div>
+    <div class="kpi success"><div class="label">Hired</div><div class="value" id="kpi-hired">–</div></div>
+    <div class="kpi alert"><div class="label">Needs follow-up</div><div class="value" id="kpi-stale">–</div></div>
+    <div class="kpi"><div class="label">Recruiters active</div><div class="value" id="kpi-recruiters">–</div></div>
   </div>
 
   <div class="filters">
@@ -181,8 +250,11 @@
     'Hired': 'pill-hired'
   };
 
+  var TERMINAL_STATUSES = ['Hired', "DQ'd", 'Not Interested / Ditched Us'];
+
   var allSubmissions = [];
   var statusOptions = [];
+  var currentPeriod = 'all';
 
   function escapeHtml(s) {
     return String(s == null ? '' : s)
@@ -207,25 +279,143 @@
     }).join('');
   }
 
-  function renderKpis() {
-    var total = allSubmissions.length;
-    var attention = 0, scheduled = 0, hired = 0;
-    allSubmissions.forEach(function (s) {
-      if (s.status === 'Need Attention' || s.status === 'Waiting for RC' || s.status === 'Need to Reschedule') attention++;
-      if (s.status === 'Scheduled & Confirmed' || s.status === 'Drug Test') scheduled++;
-      if (s.status === 'Hired' || s.status === 'Show & Hired') hired++;
+  function daysSince(iso) {
+    if (!iso) return null;
+    var t = new Date(iso).getTime();
+    if (isNaN(t)) return null;
+    return Math.floor((Date.now() - t) / 86400000);
+  }
+
+  function periodBounds(period) {
+    var now = new Date();
+    var startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var startOfTomorrow = new Date(startOfToday.getTime() + 86400000);
+    if (period === 'today') {
+      return { start: startOfToday, end: startOfTomorrow };
+    }
+    if (period === 'yesterday') {
+      var y = new Date(startOfToday.getTime() - 86400000);
+      return { start: y, end: startOfToday };
+    }
+    if (period === 'week') {
+      var day = now.getDay();
+      var diffToMonday = (day === 0 ? 6 : day - 1);
+      var monday = new Date(startOfToday.getTime() - diffToMonday * 86400000);
+      return { start: monday, end: startOfTomorrow };
+    }
+    if (period === 'month') {
+      var first = new Date(now.getFullYear(), now.getMonth(), 1);
+      return { start: first, end: startOfTomorrow };
+    }
+    return { start: null, end: null };
+  }
+
+  function prevBounds(period, bounds) {
+    if (period === 'month') {
+      var now = new Date();
+      var dom = now.getDate();
+      var pmFirst = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      var lastDayPrev = new Date(now.getFullYear(), now.getMonth(), 0).getDate();
+      var days = Math.min(dom, lastDayPrev);
+      return { start: pmFirst, end: new Date(now.getFullYear(), now.getMonth() - 1, days + 1) };
+    }
+    var span = bounds.end.getTime() - bounds.start.getTime();
+    return { start: new Date(bounds.start.getTime() - span), end: new Date(bounds.start.getTime()) };
+  }
+
+  function inPeriod(sub, bounds) {
+    if (!bounds.start) return true;
+    var t = new Date(sub.date).getTime();
+    if (isNaN(t)) return false;
+    return t >= bounds.start.getTime() && t < bounds.end.getTime();
+  }
+
+  function formatRange(bounds) {
+    if (!bounds.start) return '';
+    var opts = { month: 'short', day: 'numeric' };
+    var endDisplay = new Date(bounds.end.getTime() - 1);
+    return bounds.start.toLocaleDateString('en-US', opts) + ' – ' + endDisplay.toLocaleDateString('en-US', opts);
+  }
+
+  function setDelta(id, cur, prev) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    if (cur === 0 && prev === 0) {
+      el.textContent = 'no activity';
+      el.className = 'delta flat';
+      return;
+    }
+    if (prev === 0) {
+      el.textContent = '+' + cur + ' (new)';
+      el.className = 'delta up';
+      return;
+    }
+    var diff = cur - prev;
+    var pct = Math.round((diff / prev) * 100);
+    var sign = diff > 0 ? '+' : '';
+    el.textContent = sign + diff + ' vs prev (' + sign + pct + '%)';
+    el.className = 'delta ' + (diff > 0 ? 'up' : (diff < 0 ? 'down' : 'flat'));
+  }
+
+  function summarizePeriod(period) {
+    var bounds = periodBounds(period);
+    var prev = prevBounds(period, bounds);
+    var cur = allSubmissions.filter(function (s) { return inPeriod(s, bounds); });
+    var prevList = allSubmissions.filter(function (s) { return inPeriod(s, prev); });
+    var hired = cur.filter(function (s) { return s.status === 'Hired'; }).length;
+    var active = cur.filter(function (s) { return TERMINAL_STATUSES.indexOf(s.status) === -1; }).length;
+    var recruiters = {};
+    cur.forEach(function (s) { if (s.recruiter) recruiters[s.recruiter] = true; });
+    return {
+      count: cur.length,
+      prevCount: prevList.length,
+      hired: hired,
+      active: active,
+      recruiters: Object.keys(recruiters).length,
+      bounds: bounds
+    };
+  }
+
+  function renderPeriodCards() {
+    ['today', 'week', 'month'].forEach(function (period) {
+      var s = summarizePeriod(period);
+      document.getElementById('pc-' + period + '-count').textContent = s.count;
+      document.getElementById('pc-' + period + '-range').textContent = formatRange(s.bounds);
+      setDelta('pc-' + period + '-delta', s.count, s.prevCount);
+      document.getElementById('pc-' + period + '-hired').textContent = s.hired;
+      document.getElementById('pc-' + period + '-active').textContent = s.active;
+      document.getElementById('pc-' + period + '-recruiters').textContent = s.recruiters;
     });
+  }
+
+  function renderKPIs() {
+    var bounds = periodBounds('month');
+    var monthSubs = allSubmissions.filter(function (s) { return inPeriod(s, bounds); });
+    var total = monthSubs.length;
+    var pipeline = monthSubs.filter(function (s) { return TERMINAL_STATUSES.indexOf(s.status) === -1; }).length;
+    var hired = monthSubs.filter(function (s) { return s.status === 'Hired'; }).length;
+    var stale = monthSubs.filter(function (s) {
+      if (TERMINAL_STATUSES.indexOf(s.status) !== -1) return false;
+      var days = daysSince(s.updatedAt || s.date);
+      return days !== null && days >= 5;
+    }).length;
+    var recruiters = {};
+    monthSubs.forEach(function (s) { if (s.recruiter) recruiters[s.recruiter] = true; });
+
     document.getElementById('kpi-total').textContent = total;
-    document.getElementById('kpi-attention').textContent = attention;
-    document.getElementById('kpi-scheduled').textContent = scheduled;
+    document.getElementById('kpi-pipeline').textContent = pipeline;
     document.getElementById('kpi-hired').textContent = hired;
+    document.getElementById('kpi-stale').textContent = stale;
+    document.getElementById('kpi-recruiters').textContent = Object.keys(recruiters).length;
   }
 
   function render() {
     var q = document.getElementById('searchInput').value.trim().toLowerCase();
     var statusFilter = document.getElementById('statusFilter').value;
+    var periodFilterBounds = periodBounds(currentPeriod);
     var rows = allSubmissions.filter(function (s) {
       if (statusFilter && s.status !== statusFilter) return false;
+      if (!inPeriod(s, periodFilterBounds)) return false;
       if (!q) return true;
       var hay = [s.name, s.phone, s.email, s.carrier, s.recruiter].join(' ').toLowerCase();
       return hay.indexOf(q) >= 0;
@@ -258,7 +448,8 @@
       sel.addEventListener('change', onStatusChange);
     });
 
-    renderKpis();
+    renderKPIs();
+    renderPeriodCards();
   }
 
   function onStatusChange(e) {
@@ -285,7 +476,8 @@
         pillWrap.innerHTML = pillHtml(newStatus);
         note.className = 'save-note ok';
         note.textContent = 'Saved.';
-        renderKpis();
+        renderKPIs();
+        renderPeriodCards();
         setTimeout(function () { if (note.textContent === 'Saved.') note.textContent = ''; }, 3000);
       })
       .catch(function (err) {
@@ -339,6 +531,16 @@
   document.getElementById('searchInput').addEventListener('input', render);
   document.getElementById('statusFilter').addEventListener('change', render);
   document.getElementById('refreshBtn').addEventListener('click', load);
+
+  Array.prototype.forEach.call(document.querySelectorAll('#period-tabs button'), function (btn) {
+    btn.addEventListener('click', function () {
+      Array.prototype.forEach.call(document.querySelectorAll('#period-tabs button'), function (b) {
+        b.classList.toggle('active', b === btn);
+      });
+      currentPeriod = btn.getAttribute('data-period');
+      render();
+    });
+  });
 
   load();
 </script>
